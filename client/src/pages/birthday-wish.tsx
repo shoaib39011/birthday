@@ -43,8 +43,14 @@ const preloadImages = () => {
 const playBirthdaySong = () => {
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const notes = [523.25, 523.25, 587.33, 523.25, 698.46, 659.25]; // C, C, D, C, F, E
-    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
+    // Extended "Happy Birthday" melody
+    const notes = [
+      523.25, 523.25, 587.33, 523.25, 698.46, 659.25, // Happy birthday to you
+      523.25, 523.25, 587.33, 523.25, 783.99, 698.46, // Happy birthday to you
+      523.25, 523.25, 1046.50, 880.00, 698.46, 659.25, 587.33, // Happy birthday dear [name]
+      987.77, 987.77, 880.00, 698.46, 783.99, 698.46 // Happy birthday to you
+    ];
+    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
     let currentTime = audioContext.currentTime;
 
     notes.forEach((freq, i) => {
@@ -57,7 +63,7 @@ const playBirthdaySong = () => {
       oscillator.frequency.value = freq;
       oscillator.type = "sine";
       
-      gainNode.gain.setValueAtTime(0.2, currentTime);
+      gainNode.gain.setValueAtTime(0.25, currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + durations[i]);
       
       oscillator.start(currentTime);
@@ -117,31 +123,30 @@ const playPhotoDropSound = () => {
   }
 };
 
-// Function to play keyboard click sound (typewriter effect)
+// Function to play keyboard click sound (soft laptop keyboard - cinematic movie intro style)
 const playKeyboardClick = () => {
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     
-    // Create a more realistic keyboard click with noise
+    // Soft laptop keyboard click - cinematic, subtle, like movie intro/history reveal
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    const noise = audioContext.createBufferSource();
     
-    // Main click tone
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Vary frequency slightly for more realistic typing sound
-    const baseFreq = 1200 + Math.random() * 200;
+    // Very low frequency for soft laptop keyboard (300-500Hz range)
+    // More variation for cinematic feel
+    const baseFreq = 350 + Math.random() * 150;
     oscillator.frequency.value = baseFreq;
-    oscillator.type = "square";
+    oscillator.type = "sine"; // Softest wave type
     
-    // Quick attack and decay for click sound
-    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+    // Very subtle, gentle click - like distant laptop typing in a movie
+    gainNode.gain.setValueAtTime(0.05, audioContext.currentTime); // Very soft volume
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1); // Gentle, longer decay
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.05);
+    oscillator.stop(audioContext.currentTime + 0.1);
   } catch (error) {
     // Silently fail if audio not available
     console.log("Keyboard sound not available");
