@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles } from "lucide-react";
 
-type Stage = "welcome" | "balloons" | "message";
+type Stage = "welcome" | "balloons" | "message" | "photos";
 
 const balloonColors = [
   "bg-primary",
@@ -21,14 +21,83 @@ const confettiColors = [
 ];
 
 // Default birthday message - no backend required
-const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day!`;
+const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope ypu accept my gift(little effort from my side) keep smiling and keep shining`;
+
+// Photo images - replace these URLs with actual image URLs
+// You can use:
+// - Direct image URLs from the web
+// - Images uploaded to a CDN or image hosting service
+// - Images in the public folder (e.g., "/images/photo1.jpg")
+// Recommended: Upload images to the public folder and use paths like "/images/photo1.jpg"
+const PHOTO_IMAGES = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop",
+];
+
+// Birthday song - using a simple melody generated with Web Audio API
+const playBirthdaySong = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [523.25, 523.25, 587.33, 523.25, 698.46, 659.25]; // C, C, D, C, F, E
+    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
+    let currentTime = audioContext.currentTime;
+
+    notes.forEach((freq, i) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = freq;
+      oscillator.type = "sine";
+      
+      gainNode.gain.setValueAtTime(0.2, currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + durations[i]);
+      
+      oscillator.start(currentTime);
+      oscillator.stop(currentTime + durations[i]);
+      
+      currentTime += durations[i] + 0.1;
+    });
+  } catch (error) {
+    console.log("Could not play birthday song:", error);
+  }
+};
+
+// Function to play click sound using Web Audio API
+const playClickSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = "sine";
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (error) {
+    // Fallback: silently fail if audio context is not available
+    console.log("Audio not available");
+  }
+};
 
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
   const [showBalloons, setShowBalloons] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(false);
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [hasPlayedSong, setHasPlayedSong] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -42,7 +111,17 @@ export default function BirthdayWish() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
+  // Play birthday song when balloons appear
+  useEffect(() => {
+    if (stage === "balloons" && !hasPlayedSong) {
+      playBirthdaySong();
+      setHasPlayedSong(true);
+    }
+  }, [stage, hasPlayedSong]);
+
   const handleClick = () => {
+    playClickSound();
+    
     if (stage === "welcome") {
       setStage("balloons");
       setShowBalloons(true);
@@ -56,6 +135,9 @@ export default function BirthdayWish() {
     } else if (stage === "balloons" && balloonsComplete) {
       setStage("message");
       setShowMessage(true);
+    } else if (stage === "message") {
+      setStage("photos");
+      setShowPhotos(true);
     }
   };
 
@@ -273,6 +355,60 @@ export default function BirthdayWish() {
                 />
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {showPhotos && (
+        <div className={`absolute inset-0 z-50 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 ${!prefersReducedMotion && "animate-fade-in"}`}>
+          <div className="relative max-w-6xl w-full">
+            <h2 className="text-4xl md:text-5xl font-heading font-bold text-center text-primary mb-8">
+              Beautiful Memories
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              {PHOTO_IMAGES.map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className={`relative ${!prefersReducedMotion && "animate-scale-in"}`}
+                  style={{
+                    animationDelay: `${index * 0.2}s`,
+                  }}
+                >
+                  {/* Photo Frame */}
+                  <div className="relative bg-white p-4 md:p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                    {/* White sheet/mat */}
+                    <div className="bg-white p-3 md:p-4 shadow-inner">
+                      {/* Photo */}
+                      <div className="relative overflow-hidden bg-gray-200 aspect-[3/4]">
+                        <img
+                          src={imageUrl}
+                          alt={`Memory ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
+                          }}
+                        />
+                        {/* Decorative corner */}
+                        <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary/30" />
+                        <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary/30" />
+                        <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary/30" />
+                        <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary/30" />
+                      </div>
+                    </div>
+                    {/* Frame shadow effect */}
+                    <div className="absolute inset-0 border-4 border-primary/20 pointer-events-none" />
+                  </div>
+                  {/* Sparkle effect */}
+                  {!prefersReducedMotion && (
+                    <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-accent animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-muted-foreground mt-8 text-lg font-body animate-pulse">
+              💖 Happy Birthday Aasia! 💖
+            </p>
           </div>
         </div>
       )}
