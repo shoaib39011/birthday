@@ -39,40 +39,76 @@ const preloadImages = () => {
   });
 };
 
-// Birthday song - using a simple melody generated with Web Audio API
-const playBirthdaySong = () => {
+// Birthday song - continuous looping background music
+let birthdaySongInterval: NodeJS.Timeout | null = null;
+let audioContextRef: AudioContext | null = null;
+
+const playBirthdaySongLoop = () => {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    // Extended "Happy Birthday" melody
+    if (!audioContextRef) {
+      audioContextRef = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const audioContext = audioContextRef;
+    
+    // "Happy Birthday" melody - simplified for looping
     const notes = [
       523.25, 523.25, 587.33, 523.25, 698.46, 659.25, // Happy birthday to you
       523.25, 523.25, 587.33, 523.25, 783.99, 698.46, // Happy birthday to you
-      523.25, 523.25, 1046.50, 880.00, 698.46, 659.25, 587.33, // Happy birthday dear [name]
-      987.77, 987.77, 880.00, 698.46, 783.99, 698.46 // Happy birthday to you
     ];
-    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
-    let currentTime = audioContext.currentTime;
-
-    notes.forEach((freq, i) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
+    const totalDuration = durations.reduce((a, b) => a + b, 0) + (durations.length * 0.1);
+    
+    const playMelody = () => {
+      if (!audioContextRef) return;
       
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      let currentTime = audioContext.currentTime;
       
-      oscillator.frequency.value = freq;
-      oscillator.type = "sine";
-      
-      gainNode.gain.setValueAtTime(0.25, currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + durations[i]);
-      
-      oscillator.start(currentTime);
-      oscillator.stop(currentTime + durations[i]);
-      
-      currentTime += durations[i] + 0.1;
-    });
+      notes.forEach((freq, i) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = freq;
+        oscillator.type = "sine";
+        
+        gainNode.gain.setValueAtTime(0.3, currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + durations[i]);
+        
+        oscillator.start(currentTime);
+        oscillator.stop(currentTime + durations[i]);
+        
+        currentTime += durations[i] + 0.1;
+      });
+    };
+    
+    // Play immediately
+    playMelody();
+    
+    // Loop the song continuously
+    if (birthdaySongInterval) {
+      clearInterval(birthdaySongInterval);
+    }
+    
+    birthdaySongInterval = setInterval(() => {
+      playMelody();
+    }, totalDuration * 1000);
+    
   } catch (error) {
     console.log("Could not play birthday song:", error);
+  }
+};
+
+const stopBirthdaySong = () => {
+  if (birthdaySongInterval) {
+    clearInterval(birthdaySongInterval);
+    birthdaySongInterval = null;
+  }
+  if (audioContextRef) {
+    audioContextRef.close().catch(() => {});
+    audioContextRef = null;
   }
 };
 
@@ -169,7 +205,7 @@ export default function BirthdayWish() {
   const [outroFinal, setOutroFinal] = useState("");
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [hasPlayedSong, setHasPlayedSong] = useState(false);
+  const [isSongPlaying, setIsSongPlaying] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -183,13 +219,19 @@ export default function BirthdayWish() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Play birthday song when balloons appear
+  // Play continuous birthday song background music
   useEffect(() => {
-    if (stage === "balloons" && !hasPlayedSong) {
-      playBirthdaySong();
-      setHasPlayedSong(true);
+    // Start playing when intro begins or balloons appear
+    if ((stage === "intro" || stage === "balloons" || stage === "message" || stage === "photos" || stage === "final") && !isSongPlaying) {
+      playBirthdaySongLoop();
+      setIsSongPlaying(true);
     }
-  }, [stage, hasPlayedSong]);
+    
+    // Cleanup on unmount
+    return () => {
+      stopBirthdaySong();
+    };
+  }, [stage, isSongPlaying]);
 
   // Handle photo falling animation
   useEffect(() => {
@@ -231,10 +273,7 @@ export default function BirthdayWish() {
     const typeInterval1 = setInterval(() => {
       if (index1 < text1.length) {
         setOutroText(text1.slice(0, index1 + 1));
-        // Play keyboard click sound for each character (except spaces)
-        if (text1[index1] !== ' ') {
-          playKeyboardClick();
-        }
+        // Typing sound removed - background music plays instead
         index1++;
       } else {
         clearInterval(typeInterval1);
@@ -243,10 +282,7 @@ export default function BirthdayWish() {
           const typeInterval2 = setInterval(() => {
             if (index2 < text2.length) {
               setOutroSubtext(text2.slice(0, index2 + 1));
-              // Play keyboard click sound for each character
-              if (text2[index2] !== ' ') {
-                playKeyboardClick();
-              }
+              // Typing sound removed - background music plays instead
               index2++;
             } else {
               clearInterval(typeInterval2);
@@ -255,10 +291,7 @@ export default function BirthdayWish() {
                 const typeInterval3 = setInterval(() => {
                   if (index3 < text3.length) {
                     setOutroFinal(text3.slice(0, index3 + 1));
-                    // Play keyboard click sound for each character
-                    if (text3[index3] !== ' ') {
-                      playKeyboardClick();
-                    }
+                    // Typing sound removed - background music plays instead
                     index3++;
                   } else {
                     clearInterval(typeInterval3);
@@ -282,10 +315,7 @@ export default function BirthdayWish() {
       const typeInterval = setInterval(() => {
         if (index < text.length) {
           setIntroText(text.slice(0, index + 1));
-          // Play keyboard click sound for each character (except spaces)
-          if (text[index] !== ' ') {
-            playKeyboardClick();
-          }
+          // Typing sound removed - background music plays instead
           index++;
         } else {
           clearInterval(typeInterval);
