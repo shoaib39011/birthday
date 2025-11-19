@@ -23,11 +23,19 @@ const confettiColors = [
 // Default birthday message - no backend required
 const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope you accept my gift(little effort from my side)`;
 
-// Photo images from public/images folder
+// Photo images - Vercel compatible paths
+// Try multiple paths to ensure compatibility
 const PHOTO_IMAGES = [
-  "/images/photo1.jpg",
+  "/images/photo1.jpg",  // First try /images/ folder
   "/images/photo2.jpg",
   "/images/photo3.jpg",
+];
+
+// Fallback paths if images folder doesn't exist
+const FALLBACK_PATHS = [
+  "/photo1.jpg",
+  "/photo2.jpg", 
+  "/photo3.jpg",
 ];
 
 // Birthday song - using a simple melody generated with Web Audio API
@@ -462,17 +470,23 @@ export default function BirthdayWish() {
             <h2 className="text-4xl md:text-5xl font-heading font-bold text-center text-primary mb-8">
               Beautiful Memories
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8 relative">
               {PHOTO_IMAGES.map((imageUrl, index) => {
                 // Special handling for photo3 - crop top and bottom
                 const isPhoto3 = index === 2;
                 const isVisible = visiblePhotos.includes(index);
+                // Album tilt effect - center photo straight, side photos tilted
+                const tiltAngle = index === 0 ? -12 : index === 2 ? 12 : 0;
+                const yOffset = index === 0 ? -8 : index === 2 ? -8 : 0;
+                
                 return (
                   <div
                     key={index}
                     className={`relative ${isVisible ? (!prefersReducedMotion ? "animate-photo-fall" : "opacity-100") : "opacity-0"}`}
                     style={{
                       animationDelay: isVisible ? `${index * 0.4}s` : "0s",
+                      transform: `rotate(${tiltAngle}deg) translateY(${yOffset}px)`,
+                      transformOrigin: 'center center',
                     }}
                   >
                     {/* Photo Frame */}
@@ -495,23 +509,26 @@ export default function BirthdayWish() {
                                 objectPosition: 'center center',
                               } : {}}
                               loading="eager"
-                              crossOrigin="anonymous"
                               onError={(e) => {
                                 console.error(`Failed to load image: ${imageUrl}`);
-                                console.error(`Trying alternative paths...`);
-                                // Try alternative paths
+                                // Try alternative paths for Vercel compatibility
                                 const altPaths = [
                                   imageUrl.replace('/images/', '/'),
-                                  `/photo${index + 1}.jpg`,
+                                  FALLBACK_PATHS[index],
                                   `/images/photo${index + 1}.jpg`,
+                                  `/photo${index + 1}.jpg`,
+                                  `./images/photo${index + 1}.jpg`,
+                                  `./photo${index + 1}.jpg`,
                                 ];
                                 let altIndex = 0;
                                 const tryNext = () => {
                                   if (altIndex < altPaths.length) {
+                                    console.log(`Trying path: ${altPaths[altIndex]}`);
                                     (e.target as HTMLImageElement).src = altPaths[altIndex];
                                     altIndex++;
                                   } else {
-                                    // Final fallback
+                                    console.error(`All paths failed for photo ${index + 1}`);
+                                    // Final fallback placeholder
                                     (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
                                   }
                                 };
@@ -540,7 +557,10 @@ export default function BirthdayWish() {
                 );
               })}
             </div>
-            <p className="text-center text-muted-foreground mt-8 text-lg font-body animate-pulse">
+            <p className="text-center text-muted-foreground mt-6 text-base md:text-lg font-body italic opacity-70">
+              i didn't have any good pics 😅😅😅
+            </p>
+            <p className="text-center text-muted-foreground mt-4 text-sm md:text-base font-body animate-pulse">
               Click to continue...
             </p>
           </div>
