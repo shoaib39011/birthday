@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles } from "lucide-react";
 
-type Stage = "welcome" | "balloons" | "message" | "photos" | "final" | "outro";
+type Stage = "welcome" | "intro" | "balloons" | "message" | "photos" | "final" | "outro";
 
 const balloonColors = [
   "bg-primary",
@@ -119,6 +119,7 @@ const playPhotoDropSound = () => {
 
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
+  const [showIntro, setShowIntro] = useState(false);
   const [showBalloons, setShowBalloons] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [showPhotos, setShowPhotos] = useState(false);
@@ -126,6 +127,7 @@ export default function BirthdayWish() {
   const [showOutro, setShowOutro] = useState(false);
   const [visiblePhotos, setVisiblePhotos] = useState<number[]>([]);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [introText, setIntroText] = useState("");
   const [outroText, setOutroText] = useState("");
   const [outroSubtext, setOutroSubtext] = useState("");
   const [outroFinal, setOutroFinal] = useState("");
@@ -222,10 +224,46 @@ export default function BirthdayWish() {
     }, 100);
   };
 
+  // Typing effect for intro
+  useEffect(() => {
+    if (stage === "intro") {
+      const text = "it's 28 NOV 2025 and you have turned 18 so..... wish u a ";
+      let index = 0;
+      setIntroText("");
+      
+      const typeInterval = setInterval(() => {
+        if (index < text.length) {
+          setIntroText(text.slice(0, index + 1));
+          index++;
+        } else {
+          clearInterval(typeInterval);
+          // Auto-advance to balloons after typing completes
+          setTimeout(() => {
+            setStage("balloons");
+            setShowBalloons(true);
+            if (prefersReducedMotion) {
+              setBalloonsComplete(true);
+            } else {
+              setTimeout(() => {
+                setBalloonsComplete(true);
+              }, 2000);
+            }
+          }, 800);
+        }
+      }, 80);
+      
+      return () => clearInterval(typeInterval);
+    }
+  }, [stage, prefersReducedMotion]);
+
   const handleClick = () => {
     playClickSound();
     
     if (stage === "welcome") {
+      setStage("intro");
+      setShowIntro(true);
+    } else if (stage === "intro") {
+      // Skip typing and go to balloons
       setStage("balloons");
       setShowBalloons(true);
       if (prefersReducedMotion) {
@@ -295,6 +333,24 @@ export default function BirthdayWish() {
           >
             Click anywhere to continue
           </p>
+        </div>
+      )}
+
+      {showIntro && (
+        <div className={`absolute inset-0 z-30 flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
+          <div className="relative max-w-4xl w-full text-center">
+            <p className="text-2xl md:text-4xl lg:text-5xl font-body text-foreground leading-relaxed">
+              {introText}
+              {introText.length > 0 && introText.length < "it's 28 NOV 2025 and you have turned 18 so..... wish u a ".length && (
+                <span className="animate-pulse">|</span>
+              )}
+            </p>
+            {introText.length === "it's 28 NOV 2025 and you have turned 18 so..... wish u a ".length && (
+              <p className="text-sm md:text-base text-muted-foreground mt-4 font-body opacity-60">
+                Click to skip...
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -371,7 +427,10 @@ export default function BirthdayWish() {
         <div className={`absolute inset-0 z-40 flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
           <div className="relative max-w-2xl w-full">
             <div
-              className={`bg-card/95 backdrop-blur-xl rounded-lg p-8 md:p-12 shadow-2xl border border-card-border ${!prefersReducedMotion && "animate-scale-in"}`}
+              className={`bg-card/95 backdrop-blur-xl rounded-lg p-8 md:p-12 shadow-2xl border border-card-border ${!prefersReducedMotion && "animate-mosaic-reveal"}`}
+              style={!prefersReducedMotion ? {
+                animationDelay: '0.3s',
+              } : {}}
               data-testid="message-card"
             >
               <div className="flex items-center justify-center mb-8">
