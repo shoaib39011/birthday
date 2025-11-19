@@ -21,13 +21,13 @@ const confettiColors = [
 ];
 
 // Default birthday message - no backend required
-const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope ypu accept my gift(little effort from my side) keep smiling and keep shining`;
+const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope you accept my gift(little effort from my side)`;
 
-// Photo images from public folder - ensure these paths match your actual files
+// Photo images from public/images folder
 const PHOTO_IMAGES = [
-  "/photo1.jpg",
-  "/photo2.jpg",
-  "/photo3.jpg",
+  "/images/photo1.jpg",
+  "/images/photo2.jpg",
+  "/images/photo3.jpg",
 ];
 
 // Birthday song - using a simple melody generated with Web Audio API
@@ -118,6 +118,7 @@ export default function BirthdayWish() {
   const [visiblePhotos, setVisiblePhotos] = useState<number[]>([]);
   const [outroText, setOutroText] = useState("");
   const [outroSubtext, setOutroSubtext] = useState("");
+  const [outroFinal, setOutroFinal] = useState("");
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hasPlayedSong, setHasPlayedSong] = useState(false);
@@ -168,8 +169,10 @@ export default function BirthdayWish() {
   const typeOutroText = () => {
     const text1 = "A small effort by";
     const text2 = "~stupid";
+    const text3 = "Fi-amanillah";
     let index1 = 0;
     let index2 = 0;
+    let index3 = 0;
     
     const typeInterval1 = setInterval(() => {
       if (index1 < text1.length) {
@@ -185,6 +188,17 @@ export default function BirthdayWish() {
               index2++;
             } else {
               clearInterval(typeInterval2);
+              // Wait before starting third line
+              setTimeout(() => {
+                const typeInterval3 = setInterval(() => {
+                  if (index3 < text3.length) {
+                    setOutroFinal(text3.slice(0, index3 + 1));
+                    index3++;
+                  } else {
+                    clearInterval(typeInterval3);
+                  }
+                }, 150);
+              }, 800);
             }
           }, 100);
         }, 500);
@@ -271,18 +285,20 @@ export default function BirthdayWish() {
       {showBalloons && (
         <>
           <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-            <h2
-              className={`text-7xl md:text-9xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent tracking-wider focus:outline-none focus:ring-4 focus:ring-primary rounded-md ${
-                prefersReducedMotion ? "opacity-100" : balloonsComplete ? "opacity-100" : "opacity-0"
-              } ${!prefersReducedMotion && "transition-opacity duration-1000"}`}
-              style={{
-                textShadow: "0 4px 20px rgba(0,0,0,0.1)",
-              }}
-              data-testid="text-birthday"
-              tabIndex={0}
-            >
-              HAPPY BIRTHDAY AASIA
-            </h2>
+            <div className="w-full flex justify-center">
+              <h2
+                className={`text-7xl md:text-9xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent tracking-wider text-center focus:outline-none focus:ring-4 focus:ring-primary rounded-md ${
+                  prefersReducedMotion ? "opacity-100" : balloonsComplete ? "opacity-100" : "opacity-0"
+                } ${!prefersReducedMotion && "transition-opacity duration-1000"}`}
+                style={{
+                  textShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                }}
+                data-testid="text-birthday"
+                tabIndex={0}
+              >
+                HAPPY BIRTHDAY AASIA
+              </h2>
+            </div>
           </div>
 
           {!prefersReducedMotion && Array.from({ length: 15 }).map((_, i) => {
@@ -479,13 +495,30 @@ export default function BirthdayWish() {
                                 objectPosition: 'center center',
                               } : {}}
                               loading="eager"
+                              crossOrigin="anonymous"
                               onError={(e) => {
                                 console.error(`Failed to load image: ${imageUrl}`);
-                                // Fallback if image fails to load
-                                (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
+                                console.error(`Trying alternative paths...`);
+                                // Try alternative paths
+                                const altPaths = [
+                                  imageUrl.replace('/images/', '/'),
+                                  `/photo${index + 1}.jpg`,
+                                  `/images/photo${index + 1}.jpg`,
+                                ];
+                                let altIndex = 0;
+                                const tryNext = () => {
+                                  if (altIndex < altPaths.length) {
+                                    (e.target as HTMLImageElement).src = altPaths[altIndex];
+                                    altIndex++;
+                                  } else {
+                                    // Final fallback
+                                    (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
+                                  }
+                                };
+                                setTimeout(tryNext, 100);
                               }}
                               onLoad={() => {
-                                console.log(`Successfully loaded image: ${imageUrl}`);
+                                console.log(`✓ Successfully loaded image: ${imageUrl}`);
                               }}
                             />
                           </div>
@@ -634,13 +667,19 @@ export default function BirthdayWish() {
             <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 md:p-12 border border-white/20 shadow-2xl">
               <p className="text-2xl md:text-3xl font-body text-white/90 mb-4 min-h-[2rem]">
                 {outroText}
-                {outroText.length > 0 && !outroText.endsWith(" ") && (
+                {outroText.length > 0 && !outroText.endsWith(" ") && outroText.length < "A small effort by".length && (
                   <span className="animate-pulse">|</span>
                 )}
               </p>
-              <p className="text-xl md:text-2xl font-heading font-semibold text-rose-300/90 min-h-[2rem]">
+              <p className="text-xl md:text-2xl font-heading font-semibold text-rose-300/90 mb-4 min-h-[2rem]">
                 {outroSubtext}
-                {outroSubtext.length > 0 && (
+                {outroSubtext.length > 0 && outroSubtext.length < "~stupid".length && (
+                  <span className="animate-pulse">|</span>
+                )}
+              </p>
+              <p className="text-2xl md:text-3xl font-heading font-bold text-amber-300/90 min-h-[2.5rem] mt-6">
+                {outroFinal}
+                {outroFinal.length > 0 && outroFinal.length < "Fi-amanillah".length && (
                   <span className="animate-pulse">|</span>
                 )}
               </p>
