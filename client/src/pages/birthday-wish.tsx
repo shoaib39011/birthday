@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles } from "lucide-react";
 
-type Stage = "welcome" | "balloons" | "message" | "photos";
+type Stage = "welcome" | "balloons" | "message" | "photos" | "final";
 
 const balloonColors = [
   "bg-primary",
@@ -23,16 +23,11 @@ const confettiColors = [
 // Default birthday message - no backend required
 const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope ypu accept my gift(little effort from my side) keep smiling and keep shining`;
 
-// Photo images - replace these URLs with actual image URLs
-// You can use:
-// - Direct image URLs from the web
-// - Images uploaded to a CDN or image hosting service
-// - Images in the public folder (e.g., "/images/photo1.jpg")
-// Recommended: Upload images to the public folder and use paths like "/images/photo1.jpg"
+// Photo images from public folder
 const PHOTO_IMAGES = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop",
+  "/photo1.jpg",
+  "/photo2.jpg",
+  "/photo3.jpg",
 ];
 
 // Birthday song - using a simple melody generated with Web Audio API
@@ -95,6 +90,7 @@ export default function BirthdayWish() {
   const [showBalloons, setShowBalloons] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [showPhotos, setShowPhotos] = useState(false);
+  const [showFinal, setShowFinal] = useState(false);
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hasPlayedSong, setHasPlayedSong] = useState(false);
@@ -138,6 +134,9 @@ export default function BirthdayWish() {
     } else if (stage === "message") {
       setStage("photos");
       setShowPhotos(true);
+    } else if (stage === "photos") {
+      setStage("final");
+      setShowFinal(true);
     }
   };
 
@@ -366,49 +365,177 @@ export default function BirthdayWish() {
               Beautiful Memories
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              {PHOTO_IMAGES.map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className={`relative ${!prefersReducedMotion && "animate-scale-in"}`}
-                  style={{
-                    animationDelay: `${index * 0.2}s`,
-                  }}
-                >
-                  {/* Photo Frame */}
-                  <div className="relative bg-white p-4 md:p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                    {/* White sheet/mat */}
-                    <div className="bg-white p-3 md:p-4 shadow-inner">
-                      {/* Photo */}
-                      <div className="relative overflow-hidden bg-gray-200 aspect-[3/4]">
-                        <img
-                          src={imageUrl}
-                          alt={`Memory ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback if image fails to load
-                            (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
-                          }}
-                        />
-                        {/* Decorative corner */}
-                        <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary/30" />
-                        <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary/30" />
-                        <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary/30" />
-                        <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary/30" />
+              {PHOTO_IMAGES.map((imageUrl, index) => {
+                // Special handling for photo3 - crop top and bottom
+                const isPhoto3 = index === 2;
+                return (
+                  <div
+                    key={index}
+                    className={`relative ${!prefersReducedMotion && "animate-scale-in"}`}
+                    style={{
+                      animationDelay: `${index * 0.2}s`,
+                    }}
+                  >
+                    {/* Photo Frame */}
+                    <div className="relative bg-white p-4 md:p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                      {/* White sheet/mat */}
+                      <div className="bg-white p-3 md:p-4 shadow-inner">
+                        {/* Photo - flexible aspect ratio for landscape/portrait */}
+                        <div className={`relative overflow-hidden bg-gray-200 ${isPhoto3 ? 'aspect-[4/5]' : 'aspect-[3/4]'}`}>
+                          <div className={`w-full h-full ${isPhoto3 ? 'overflow-hidden' : ''}`} style={isPhoto3 ? { 
+                            clipPath: 'inset(8% 0 8% 0)',
+                            marginTop: '-8%',
+                            marginBottom: '-8%',
+                            height: '116%'
+                          } : {}}>
+                            <img
+                              src={imageUrl}
+                              alt={`Memory ${index + 1}`}
+                              className={`w-full h-full object-cover ${isPhoto3 ? 'object-center scale-110' : 'object-center'}`}
+                              style={isPhoto3 ? {
+                                objectPosition: 'center center',
+                              } : {}}
+                              onError={(e) => {
+                                // Fallback if image fails to load
+                                (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
+                              }}
+                            />
+                          </div>
+                          {/* Decorative corner */}
+                          <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary/30" />
+                          <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary/30" />
+                          <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary/30" />
+                          <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary/30" />
+                        </div>
                       </div>
+                      {/* Frame shadow effect */}
+                      <div className="absolute inset-0 border-4 border-primary/20 pointer-events-none" />
                     </div>
-                    {/* Frame shadow effect */}
-                    <div className="absolute inset-0 border-4 border-primary/20 pointer-events-none" />
+                    {/* Sparkle effect */}
+                    {!prefersReducedMotion && (
+                      <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-accent animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                    )}
                   </div>
-                  {/* Sparkle effect */}
-                  {!prefersReducedMotion && (
-                    <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-accent animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
             <p className="text-center text-muted-foreground mt-8 text-lg font-body animate-pulse">
-              💖 Happy Birthday Aasia! 💖
+              Click to continue...
             </p>
+          </div>
+        </div>
+      )}
+
+      {showFinal && (
+        <div className={`absolute inset-0 z-60 flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
+          {/* Aromatic background with soft gradient and floral elements */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-50/90 via-pink-50/90 to-purple-50/90 backdrop-blur-sm" />
+          
+          {/* Floating petals/flowers effect */}
+          {!prefersReducedMotion && Array.from({ length: 12 }).map((_, i) => {
+            const positions = [
+              { top: "10%", left: "5%", rotate: "15deg" },
+              { top: "20%", right: "8%", rotate: "-20deg" },
+              { top: "35%", left: "3%", rotate: "25deg" },
+              { top: "45%", right: "5%", rotate: "-15deg" },
+              { bottom: "20%", left: "7%", rotate: "30deg" },
+              { bottom: "30%", right: "10%", rotate: "-25deg" },
+              { top: "60%", left: "2%", rotate: "20deg" },
+              { top: "70%", right: "3%", rotate: "-18deg" },
+              { bottom: "10%", left: "12%", rotate: "22deg" },
+              { bottom: "40%", right: "7%", rotate: "-28deg" },
+              { top: "15%", left: "50%", rotate: "18deg" },
+              { bottom: "15%", right: "50%", rotate: "-22deg" },
+            ];
+            const delays = [0, 0.5, 1, 1.5, 2, 2.5, 0.3, 0.8, 1.3, 1.8, 2.3, 0.6];
+            
+            return (
+              <div
+                key={`petal-${i}`}
+                className="absolute text-rose-300/40 animate-float-gentle pointer-events-none"
+                style={{
+                  ...positions[i],
+                  fontSize: "2rem",
+                  animationDelay: `${delays[i]}s`,
+                  transform: `rotate(${positions[i].rotate})`,
+                }}
+              >
+                ✿
+              </div>
+            );
+          })}
+
+          {/* Main message card */}
+          <div className="relative max-w-3xl w-full z-10">
+            <div className={`bg-white/95 backdrop-blur-xl rounded-2xl p-8 md:p-12 shadow-2xl border-2 border-rose-200/50 ${!prefersReducedMotion && "animate-scale-in"}`}>
+              {/* Decorative top border */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-rose-300 via-pink-300 to-purple-300 rounded-t-2xl" />
+              
+              {/* Sparkle decorations */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <Sparkles className="w-12 h-12 text-rose-400 animate-pulse" />
+              </div>
+              
+              {/* Main message */}
+              <div className="text-center space-y-6 mt-4">
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <Heart className="w-8 h-8 text-rose-500 fill-rose-500 animate-heart-beat" />
+                  <Heart className="w-10 h-10 text-pink-500 fill-pink-500 animate-heart-beat" style={{ animationDelay: "0.2s" }} />
+                  <Heart className="w-8 h-8 text-rose-500 fill-rose-500 animate-heart-beat" style={{ animationDelay: "0.4s" }} />
+                </div>
+                
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+                  Keep smiling,
+                </h2>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+                  keep shining,
+                </h2>
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-semibold text-rose-700 mt-4 leading-tight">
+                  I'm always there for you!
+                </h2>
+                
+                {/* Hope-giving sub-message */}
+                <p className="text-lg md:text-xl text-rose-600/80 font-body mt-8 italic leading-relaxed">
+                  "Every day is a new beginning. You have the strength to overcome any challenge, 
+                  and the beauty to light up any room. Remember, you are loved, you are valued, 
+                  and you are never alone. Keep moving forward with hope in your heart."
+                </p>
+                
+                {/* Bottom decorative hearts */}
+                <div className="flex items-center justify-center gap-4 mt-8">
+                  <Heart className="w-6 h-6 text-rose-400 fill-rose-400 animate-heart-beat" />
+                  <Heart className="w-8 h-8 text-pink-400 fill-pink-400 animate-heart-beat" style={{ animationDelay: "0.3s" }} />
+                  <Heart className="w-6 h-6 text-purple-400 fill-purple-400 animate-heart-beat" style={{ animationDelay: "0.6s" }} />
+                </div>
+              </div>
+            </div>
+            
+            {/* Floating sparkles around the card */}
+            {!prefersReducedMotion && Array.from({ length: 8 }).map((_, i) => {
+              const positions = [
+                { top: "-10%", left: "10%" },
+                { top: "-5%", right: "15%" },
+                { bottom: "-10%", left: "20%" },
+                { bottom: "-5%", right: "10%" },
+                { top: "20%", left: "-5%" },
+                { top: "30%", right: "-8%" },
+                { bottom: "25%", left: "-3%" },
+                { bottom: "35%", right: "-5%" },
+              ];
+              
+              return (
+                <Sparkles
+                  key={`sparkle-${i}`}
+                  className="absolute text-rose-300/60 animate-pulse"
+                  style={{
+                    ...positions[i],
+                    width: "24px",
+                    height: "24px",
+                    animationDelay: `${i * 0.4}s`,
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       )}
