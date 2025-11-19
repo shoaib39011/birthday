@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import type { BirthdayMessage } from "@shared/schema";
 
 type Stage = "welcome" | "balloons" | "message";
 
@@ -22,16 +20,15 @@ const confettiColors = [
   "bg-chart-5",
 ];
 
+// Default birthday message - no backend required
+const DEFAULT_MESSAGE = `You bring so much joy and happiness into this world. On your special day, I want you to know how incredibly amazing you are. May this year bring you endless smiles, unforgettable moments, and all the love your heart can hold. You deserve every wonderful thing that comes your way. Here's to celebrating YOU today and always!`;
+
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
   const [showBalloons, setShowBalloons] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  const { data: messageData, isLoading, isError } = useQuery<BirthdayMessage>({
-    queryKey: ["/api/message"],
-  });
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -69,30 +66,7 @@ export default function BirthdayWish() {
     }
   };
 
-  const customMessage = messageData?.message || `You bring so much joy and happiness into this world. On your special day, I want you to know how incredibly amazing you are. May this year bring you endless smiles, unforgettable moments, and all the love your heart can hold. You deserve every wonderful thing that comes your way. Here's to celebrating YOU today and always!`;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" data-testid="loading-spinner" />
-          <p className="text-lg font-body text-foreground">Preparing your special message...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
-        <div className="flex flex-col items-center gap-4 p-8 bg-card/95 backdrop-blur-xl rounded-lg border border-card-border">
-          <p className="text-lg font-body text-card-foreground" data-testid="error-message">
-            Something went wrong while loading your birthday message. Please try refreshing the page.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const customMessage = DEFAULT_MESSAGE;
 
   return (
     <div
