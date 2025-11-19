@@ -1,37 +1,27 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { type BirthdayMessage } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getMessage(): Promise<BirthdayMessage>;
+  updateMessage(message: BirthdayMessage): Promise<BirthdayMessage>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private message: BirthdayMessage;
 
   constructor() {
-    this.users = new Map();
+    this.message = {
+      message: `You bring so much joy and happiness into this world. On your special day, I want you to know how incredibly amazing you are. May this year bring you endless smiles, unforgettable moments, and all the love your heart can hold. You deserve every wonderful thing that comes your way. Here's to celebrating YOU today and always!`,
+      recipientName: undefined,
+    };
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getMessage(): Promise<BirthdayMessage> {
+    return this.message;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateMessage(message: BirthdayMessage): Promise<BirthdayMessage> {
+    this.message = message;
+    return this.message;
   }
 }
 
