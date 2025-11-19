@@ -483,44 +483,54 @@ export default function BirthdayWish() {
                 // Special handling for photo3 - crop top and bottom
                 const isPhoto3 = index === 2;
                 const isVisible = visiblePhotos.includes(index);
-                // Album tilt effect - center photo straight, side photos tilted
-                const tiltAngle = index === 0 ? -12 : index === 2 ? 12 : 0;
-                const yOffset = index === 0 ? -8 : index === 2 ? -8 : 0;
+                // Album tilt effect - center photo straight, side photos slightly tilted
+                const tiltAngle = index === 0 ? -8 : index === 2 ? 8 : 0;
+                const yOffset = index === 0 ? -5 : index === 2 ? -5 : 0;
                 
                 return (
                   <div
                     key={index}
-                    className={`relative ${isVisible ? (!prefersReducedMotion ? "animate-photo-fall" : "opacity-100") : "opacity-0"}`}
+                    className="relative"
                     style={{
-                      animationDelay: isVisible ? `${index * 0.4}s` : "0s",
-                      transform: `rotate(${tiltAngle}deg) translateY(${yOffset}px)`,
+                      // Tilt persists - applied to outer wrapper
+                      transform: isVisible ? `rotate(${tiltAngle}deg) translateY(${yOffset}px)` : 'none',
                       transformOrigin: 'center center',
+                      width: '100%',
+                      maxWidth: '280px', // Ensure all photos same max width
+                      flexShrink: 0,
+                      opacity: isVisible ? 1 : 0,
+                      transition: 'opacity 0.3s ease-in',
                     }}
                   >
-                    {/* Photo Frame */}
-                    <div className="relative bg-white p-4 md:p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                    {/* Inner wrapper for animation */}
+                    <div
+                      className={`relative ${isVisible && !prefersReducedMotion ? "animate-photo-fall" : ""}`}
+                      style={{
+                        animationDelay: isVisible ? `${index * 0.4}s` : "0s",
+                      }}
+                    >
+                      {/* Photo Frame */}
+                      <div className="relative bg-white p-4 md:p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300 w-full">
                       {/* White sheet/mat */}
                       <div className="bg-white p-3 md:p-4 shadow-inner">
-                        {/* Photo - flexible aspect ratio for landscape/portrait */}
-                        <div className={`relative overflow-hidden bg-gray-200 ${isPhoto3 ? 'aspect-[4/5]' : 'aspect-[3/4]'}`}>
-                          <div className={`w-full h-full ${isPhoto3 ? 'overflow-hidden' : ''}`} style={isPhoto3 ? { 
-                            clipPath: 'inset(8% 0 8% 0)',
-                            marginTop: '-8%',
-                            marginBottom: '-8%',
-                            height: '116%'
-                          } : {}}>
+                        {/* Photo - same aspect ratio for all photos */}
+                        <div className="relative overflow-hidden bg-gray-200 aspect-[3/4] w-full">
+                          <div className="w-full h-full">
                             <img
                               src={imageUrl}
                               alt={`Memory ${index + 1}`}
-                              className={`w-full h-full object-cover ${isPhoto3 ? 'object-center scale-110' : 'object-center'}`}
+                              className="w-full h-full object-cover object-center"
                               loading="eager"
                               decoding="async"
                               style={{
                                 opacity: loadedImages.has(index) ? 1 : (isVisible ? 0.3 : 0),
                                 transition: 'opacity 0.5s ease-in',
                                 ...(isPhoto3 ? {
+                                  objectPosition: 'center 30%', // Crop top/bottom for photo3
+                                  objectFit: 'cover',
+                                } : {
                                   objectPosition: 'center center',
-                                } : {})
+                                })
                               }}
                               onError={(e) => {
                                 console.error(`Failed to load image: ${imageUrl}`);
@@ -564,6 +574,7 @@ export default function BirthdayWish() {
                     {!prefersReducedMotion && (
                       <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-accent animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
                     )}
+                    </div>
                   </div>
                 );
               })}
