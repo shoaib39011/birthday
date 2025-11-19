@@ -227,7 +227,7 @@ export default function BirthdayWish() {
   // Typing effect for intro
   useEffect(() => {
     if (stage === "intro") {
-      const text = "it's 28 NOV 2025 and you have turned 18 so..... wish u a ";
+      const text = "it's 28 NOV 2025 and you have turned 18 so..... so wishing you a ";
       let index = 0;
       setIntroText("");
       
@@ -239,6 +239,7 @@ export default function BirthdayWish() {
           clearInterval(typeInterval);
           // Auto-advance to balloons after typing completes
           setTimeout(() => {
+            setShowIntro(false); // Hide intro before showing balloons
             setStage("balloons");
             setShowBalloons(true);
             if (prefersReducedMotion) {
@@ -264,6 +265,7 @@ export default function BirthdayWish() {
       setShowIntro(true);
     } else if (stage === "intro") {
       // Skip typing and go to balloons
+      setShowIntro(false); // Hide intro before showing balloons
       setStage("balloons");
       setShowBalloons(true);
       if (prefersReducedMotion) {
@@ -336,16 +338,16 @@ export default function BirthdayWish() {
         </div>
       )}
 
-      {showIntro && (
-        <div className={`absolute inset-0 z-30 flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
+      {showIntro && stage === "intro" && (
+        <div className={`absolute inset-0 z-30 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 ${!prefersReducedMotion && "animate-fade-in"}`}>
           <div className="relative max-w-4xl w-full text-center">
-            <p className="text-2xl md:text-4xl lg:text-5xl font-body text-foreground leading-relaxed">
+            <p className="text-2xl md:text-4xl lg:text-5xl font-mono text-foreground leading-relaxed tracking-wider">
               {introText}
-              {introText.length > 0 && introText.length < "it's 28 NOV 2025 and you have turned 18 so..... wish u a ".length && (
-                <span className="animate-pulse">|</span>
+              {introText.length > 0 && introText.length < "it's 28 NOV 2025 and you have turned 18 so..... so wishing you a ".length && (
+                <span className="animate-pulse ml-1">|</span>
               )}
             </p>
-            {introText.length === "it's 28 NOV 2025 and you have turned 18 so..... wish u a ".length && (
+            {introText.length === "it's 28 NOV 2025 and you have turned 18 so..... so wishing you a ".length && (
               <p className="text-sm md:text-base text-muted-foreground mt-4 font-body opacity-60">
                 Click to skip...
               </p>
