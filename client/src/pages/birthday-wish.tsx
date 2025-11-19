@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles } from "lucide-react";
 
-type Stage = "welcome" | "balloons" | "message" | "photos" | "final";
+type Stage = "welcome" | "balloons" | "message" | "photos" | "final" | "outro";
 
 const balloonColors = [
   "bg-primary",
@@ -23,7 +23,7 @@ const confettiColors = [
 // Default birthday message - no backend required
 const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope ypu accept my gift(little effort from my side) keep smiling and keep shining`;
 
-// Photo images from public folder
+// Photo images from public folder - ensure these paths match your actual files
 const PHOTO_IMAGES = [
   "/photo1.jpg",
   "/photo2.jpg",
@@ -85,12 +85,39 @@ const playClickSound = () => {
   }
 };
 
+// Function to play photo drop sound
+const playPhotoDropSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 400;
+    oscillator.type = "sine";
+    
+    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.log("Audio not available");
+  }
+};
+
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
   const [showBalloons, setShowBalloons] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [showPhotos, setShowPhotos] = useState(false);
   const [showFinal, setShowFinal] = useState(false);
+  const [showOutro, setShowOutro] = useState(false);
+  const [visiblePhotos, setVisiblePhotos] = useState<number[]>([]);
+  const [outroText, setOutroText] = useState("");
+  const [outroSubtext, setOutroSubtext] = useState("");
   const [balloonsComplete, setBalloonsComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hasPlayedSong, setHasPlayedSong] = useState(false);
@@ -115,6 +142,56 @@ export default function BirthdayWish() {
     }
   }, [stage, hasPlayedSong]);
 
+  // Handle photo falling animation
+  useEffect(() => {
+    if (stage === "photos") {
+      if (visiblePhotos.length < PHOTO_IMAGES.length) {
+        const timer = setTimeout(() => {
+          const nextIndex = visiblePhotos.length;
+          setVisiblePhotos([...visiblePhotos, nextIndex]);
+          playPhotoDropSound();
+        }, visiblePhotos.length === 0 ? 300 : 500 + (visiblePhotos.length * 400));
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [stage, visiblePhotos]);
+
+  // Reset visible photos when entering photos stage
+  useEffect(() => {
+    if (stage === "photos") {
+      setVisiblePhotos([]);
+    }
+  }, [stage]);
+
+  // Typing effect for outro
+  const typeOutroText = () => {
+    const text1 = "A small effort by";
+    const text2 = "~stupid";
+    let index1 = 0;
+    let index2 = 0;
+    
+    const typeInterval1 = setInterval(() => {
+      if (index1 < text1.length) {
+        setOutroText(text1.slice(0, index1 + 1));
+        index1++;
+      } else {
+        clearInterval(typeInterval1);
+        // Wait a bit before starting second line
+        setTimeout(() => {
+          const typeInterval2 = setInterval(() => {
+            if (index2 < text2.length) {
+              setOutroSubtext(text2.slice(0, index2 + 1));
+              index2++;
+            } else {
+              clearInterval(typeInterval2);
+            }
+          }, 100);
+        }, 500);
+      }
+    }, 100);
+  };
+
   const handleClick = () => {
     playClickSound();
     
@@ -137,6 +214,11 @@ export default function BirthdayWish() {
     } else if (stage === "photos") {
       setStage("final");
       setShowFinal(true);
+    } else if (stage === "final") {
+      setStage("outro");
+      setShowOutro(true);
+      // Start typing outro
+      typeOutroText();
     }
   };
 
@@ -368,12 +450,13 @@ export default function BirthdayWish() {
               {PHOTO_IMAGES.map((imageUrl, index) => {
                 // Special handling for photo3 - crop top and bottom
                 const isPhoto3 = index === 2;
+                const isVisible = visiblePhotos.includes(index);
                 return (
                   <div
                     key={index}
-                    className={`relative ${!prefersReducedMotion && "animate-scale-in"}`}
+                    className={`relative ${isVisible ? (!prefersReducedMotion ? "animate-photo-fall" : "opacity-100") : "opacity-0"}`}
                     style={{
-                      animationDelay: `${index * 0.2}s`,
+                      animationDelay: isVisible ? `${index * 0.4}s` : "0s",
                     }}
                   >
                     {/* Photo Frame */}
@@ -395,9 +478,14 @@ export default function BirthdayWish() {
                               style={isPhoto3 ? {
                                 objectPosition: 'center center',
                               } : {}}
+                              loading="eager"
                               onError={(e) => {
+                                console.error(`Failed to load image: ${imageUrl}`);
                                 // Fallback if image fails to load
                                 (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
+                              }}
+                              onLoad={() => {
+                                console.log(`Successfully loaded image: ${imageUrl}`);
                               }}
                             />
                           </div>
@@ -427,7 +515,7 @@ export default function BirthdayWish() {
       )}
 
       {showFinal && (
-        <div className={`absolute inset-0 z-60 flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
+        <div className={`absolute inset-0 z-[70] flex items-center justify-center p-6 md:p-12 ${!prefersReducedMotion && "animate-fade-in"}`}>
           {/* Aromatic background with soft gradient and floral elements */}
           <div className="absolute inset-0 bg-gradient-to-br from-rose-50/90 via-pink-50/90 to-purple-50/90 backdrop-blur-sm" />
           
@@ -536,6 +624,27 @@ export default function BirthdayWish() {
                 />
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {showOutro && (
+        <div className={`absolute inset-0 z-[80] flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 ${!prefersReducedMotion && "animate-fade-in"}`}>
+          <div className="relative max-w-2xl w-full text-center">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 md:p-12 border border-white/20 shadow-2xl">
+              <p className="text-2xl md:text-3xl font-body text-white/90 mb-4 min-h-[2rem]">
+                {outroText}
+                {outroText.length > 0 && !outroText.endsWith(" ") && (
+                  <span className="animate-pulse">|</span>
+                )}
+              </p>
+              <p className="text-xl md:text-2xl font-heading font-semibold text-rose-300/90 min-h-[2rem]">
+                {outroSubtext}
+                {outroSubtext.length > 0 && (
+                  <span className="animate-pulse">|</span>
+                )}
+              </p>
+            </div>
           </div>
         </div>
       )}
