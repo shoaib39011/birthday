@@ -117,6 +117,37 @@ const playPhotoDropSound = () => {
   }
 };
 
+// Function to play keyboard click sound (typewriter effect)
+const playKeyboardClick = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Create a more realistic keyboard click with noise
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const noise = audioContext.createBufferSource();
+    
+    // Main click tone
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Vary frequency slightly for more realistic typing sound
+    const baseFreq = 1200 + Math.random() * 200;
+    oscillator.frequency.value = baseFreq;
+    oscillator.type = "square";
+    
+    // Quick attack and decay for click sound
+    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.05);
+  } catch (error) {
+    // Silently fail if audio not available
+    console.log("Keyboard sound not available");
+  }
+};
+
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
   const [showIntro, setShowIntro] = useState(false);
@@ -195,6 +226,10 @@ export default function BirthdayWish() {
     const typeInterval1 = setInterval(() => {
       if (index1 < text1.length) {
         setOutroText(text1.slice(0, index1 + 1));
+        // Play keyboard click sound for each character (except spaces)
+        if (text1[index1] !== ' ') {
+          playKeyboardClick();
+        }
         index1++;
       } else {
         clearInterval(typeInterval1);
@@ -203,6 +238,10 @@ export default function BirthdayWish() {
           const typeInterval2 = setInterval(() => {
             if (index2 < text2.length) {
               setOutroSubtext(text2.slice(0, index2 + 1));
+              // Play keyboard click sound for each character
+              if (text2[index2] !== ' ') {
+                playKeyboardClick();
+              }
               index2++;
             } else {
               clearInterval(typeInterval2);
@@ -211,6 +250,10 @@ export default function BirthdayWish() {
                 const typeInterval3 = setInterval(() => {
                   if (index3 < text3.length) {
                     setOutroFinal(text3.slice(0, index3 + 1));
+                    // Play keyboard click sound for each character
+                    if (text3[index3] !== ' ') {
+                      playKeyboardClick();
+                    }
                     index3++;
                   } else {
                     clearInterval(typeInterval3);
@@ -227,13 +270,17 @@ export default function BirthdayWish() {
   // Typing effect for intro
   useEffect(() => {
     if (stage === "intro") {
-      const text = "it's 28 NOV 2025 and you have turned 18 so..... so wishing you a ";
+      const text = "it's 28 NOV 2025 and you have turned 18 so.....wishing you a ";
       let index = 0;
       setIntroText("");
       
       const typeInterval = setInterval(() => {
         if (index < text.length) {
           setIntroText(text.slice(0, index + 1));
+          // Play keyboard click sound for each character (except spaces)
+          if (text[index] !== ' ') {
+            playKeyboardClick();
+          }
           index++;
         } else {
           clearInterval(typeInterval);
