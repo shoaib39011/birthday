@@ -24,16 +24,16 @@ const confettiColors = [
 const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope you accept my gift(little effort from my side)`;
 
 // Photo images - Vercel compatible paths
-// Try multiple paths to ensure compatibility
+// Vite copies public folder contents to dist root, so try both locations
 const PHOTO_IMAGES = [
-  "/images/photo1.jpg",  // First try /images/ folder
+  "/images/photo1.jpg",  // Try /images/ folder first (if images are in public/images/)
   "/images/photo2.jpg",
   "/images/photo3.jpg",
 ];
 
-// Fallback paths if images folder doesn't exist
+// Fallback paths - direct root paths (Vite copies public/ to dist root)
 const FALLBACK_PATHS = [
-  "/photo1.jpg",
+  "/photo1.jpg",  // Fallback if images are in public root
   "/photo2.jpg", 
   "/photo3.jpg",
 ];
@@ -512,13 +512,12 @@ export default function BirthdayWish() {
                               onError={(e) => {
                                 console.error(`Failed to load image: ${imageUrl}`);
                                 // Try alternative paths for Vercel compatibility
+                                // Try root paths first (since Vite copies public/ to dist root)
                                 const altPaths = [
-                                  imageUrl.replace('/images/', '/'),
-                                  FALLBACK_PATHS[index],
-                                  `/images/photo${index + 1}.jpg`,
-                                  `/photo${index + 1}.jpg`,
-                                  `./images/photo${index + 1}.jpg`,
-                                  `./photo${index + 1}.jpg`,
+                                  FALLBACK_PATHS[index],  // Try root first: /photo1.jpg
+                                  imageUrl.replace('/images/', '/'),  // Remove /images/ prefix
+                                  `/images/photo${index + 1}.jpg`,  // Try with /images/ again
+                                  `/photo${index + 1}.jpg`,  // Direct root path
                                 ];
                                 let altIndex = 0;
                                 const tryNext = () => {
