@@ -21,7 +21,7 @@ const confettiColors = [
 ];
 
 // Default birthday message - no backend required
-const DEFAULT_MESSAGE = `You bring so much joy and happiness into this world. On your special day, I want you to know how incredibly amazing you are. May this year bring you endless smiles, unforgettable moments, and all the love your heart can hold. You deserve every wonderful thing that comes your way. Here's to celebrating YOU today and always!`;
+const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day!`;
 
 export default function BirthdayWish() {
   const [stage, setStage] = useState<Stage>("welcome");
@@ -118,7 +118,7 @@ export default function BirthdayWish() {
               data-testid="text-birthday"
               tabIndex={0}
             >
-              HAPPY BIRTHDAY
+              HAPPY BIRTHDAY AASIA
             </h2>
           </div>
 
