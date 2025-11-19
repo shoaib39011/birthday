@@ -45,22 +45,37 @@ let audioContextRef: AudioContext | null = null;
 
 const playBirthdaySongLoop = () => {
   try {
+    // Resume audio context if suspended (browser autoplay policy)
+    if (audioContextRef && audioContextRef.state === 'suspended') {
+      audioContextRef.resume().catch(() => {});
+    }
+    
     if (!audioContextRef) {
       audioContextRef = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     
     const audioContext = audioContextRef;
     
-    // "Happy Birthday" melody - simplified for looping
+    // "Happy Birthday" melody - full version for wish page
     const notes = [
       523.25, 523.25, 587.33, 523.25, 698.46, 659.25, // Happy birthday to you
       523.25, 523.25, 587.33, 523.25, 783.99, 698.46, // Happy birthday to you
+      523.25, 523.25, 1046.50, 880.00, 698.46, 659.25, 587.33, // Happy birthday dear [name]
+      987.77, 987.77, 880.00, 698.46, 783.99, 698.46 // Happy birthday to you
     ];
-    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
+    const durations = [0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.4, 0.8, 0.3, 0.1, 0.4, 0.4, 0.4, 0.8];
     const totalDuration = durations.reduce((a, b) => a + b, 0) + (durations.length * 0.1);
     
     const playMelody = () => {
-      if (!audioContextRef) return;
+      if (!audioContextRef || audioContextRef.state === 'closed') return;
+      
+      // Resume if suspended
+      if (audioContextRef.state === 'suspended') {
+        audioContextRef.resume().then(() => {
+          playMelody();
+        }).catch(() => {});
+        return;
+      }
       
       let currentTime = audioContext.currentTime;
       
@@ -74,7 +89,7 @@ const playBirthdaySongLoop = () => {
         oscillator.frequency.value = freq;
         oscillator.type = "sine";
         
-        gainNode.gain.setValueAtTime(0.3, currentTime);
+        gainNode.gain.setValueAtTime(0.35, currentTime); // Slightly louder for wish page
         gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + durations[i]);
         
         oscillator.start(currentTime);
@@ -219,17 +234,28 @@ export default function BirthdayWish() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Play continuous birthday song background music
+  // Play continuous birthday song background music - start when balloons appear
   useEffect(() => {
-    // Start playing when intro begins or balloons appear
-    if ((stage === "intro" || stage === "balloons" || stage === "message" || stage === "photos" || stage === "final") && !isSongPlaying) {
+    // Start playing specifically when balloons (wish page) appears
+    if (stage === "balloons" && !isSongPlaying) {
+      // Small delay to ensure audio context is ready
+      setTimeout(() => {
+        playBirthdaySongLoop();
+        setIsSongPlaying(true);
+      }, 100);
+    }
+    
+    // Continue playing through other stages
+    if ((stage === "message" || stage === "photos" || stage === "final") && !isSongPlaying) {
       playBirthdaySongLoop();
       setIsSongPlaying(true);
     }
     
     // Cleanup on unmount
     return () => {
-      stopBirthdaySong();
+      if (stage === "outro") {
+        stopBirthdaySong();
+      }
     };
   }, [stage, isSongPlaying]);
 
