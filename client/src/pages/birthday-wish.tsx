@@ -23,20 +23,21 @@ const confettiColors = [
 // Default birthday message - no backend required
 const DEFAULT_MESSAGE = `Assalamualikum aasia! Happy birthday to you! I hope you have a great day and a wonderful year ahead. You are a special person and I am lucky to have you in my life. I love you and I hope you have a great day! and hope you accept my gift(little effort from my side)`;
 
-// Photo images - Vercel compatible paths
-// Vite copies public folder contents to dist root, so try both locations
+// Photo images - Use direct paths since images are in public root
+// Vite copies public folder contents to dist root
 const PHOTO_IMAGES = [
-  "/images/photo1.jpg",  // Try /images/ folder first (if images are in public/images/)
-  "/images/photo2.jpg",
-  "/images/photo3.jpg",
-];
-
-// Fallback paths - direct root paths (Vite copies public/ to dist root)
-const FALLBACK_PATHS = [
-  "/photo1.jpg",  // Fallback if images are in public root
-  "/photo2.jpg", 
+  "/photo1.jpg",
+  "/photo2.jpg",
   "/photo3.jpg",
 ];
+
+// Preload images to prevent flickering
+const preloadImages = () => {
+  PHOTO_IMAGES.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+};
 
 // Birthday song - using a simple melody generated with Web Audio API
 const playBirthdaySong = () => {
@@ -124,6 +125,7 @@ export default function BirthdayWish() {
   const [showFinal, setShowFinal] = useState(false);
   const [showOutro, setShowOutro] = useState(false);
   const [visiblePhotos, setVisiblePhotos] = useState<number[]>([]);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [outroText, setOutroText] = useState("");
   const [outroSubtext, setOutroSubtext] = useState("");
   const [outroFinal, setOutroFinal] = useState("");
@@ -166,10 +168,16 @@ export default function BirthdayWish() {
     }
   }, [stage, visiblePhotos]);
 
+  // Preload images on component mount to prevent flickering
+  useEffect(() => {
+    preloadImages();
+  }, []);
+
   // Reset visible photos when entering photos stage
   useEffect(() => {
     if (stage === "photos") {
       setVisiblePhotos([]);
+      setLoadedImages(new Set());
     }
   }, [stage]);
 
@@ -505,19 +513,21 @@ export default function BirthdayWish() {
                               src={imageUrl}
                               alt={`Memory ${index + 1}`}
                               className={`w-full h-full object-cover ${isPhoto3 ? 'object-center scale-110' : 'object-center'}`}
-                              style={isPhoto3 ? {
-                                objectPosition: 'center center',
-                              } : {}}
                               loading="eager"
+                              decoding="async"
+                              style={{
+                                opacity: loadedImages.has(index) ? 1 : (isVisible ? 0.3 : 0),
+                                transition: 'opacity 0.5s ease-in',
+                                ...(isPhoto3 ? {
+                                  objectPosition: 'center center',
+                                } : {})
+                              }}
                               onError={(e) => {
                                 console.error(`Failed to load image: ${imageUrl}`);
-                                // Try alternative paths for Vercel compatibility
-                                // Try root paths first (since Vite copies public/ to dist root)
+                                // Try alternative paths
                                 const altPaths = [
-                                  FALLBACK_PATHS[index],  // Try root first: /photo1.jpg
-                                  imageUrl.replace('/images/', '/'),  // Remove /images/ prefix
-                                  `/images/photo${index + 1}.jpg`,  // Try with /images/ again
-                                  `/photo${index + 1}.jpg`,  // Direct root path
+                                  `/images/photo${index + 1}.jpg`,  // Try /images/ folder
+                                  `./photo${index + 1}.jpg`,  // Relative path
                                 ];
                                 let altIndex = 0;
                                 const tryNext = () => {
@@ -531,9 +541,11 @@ export default function BirthdayWish() {
                                     (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EPhoto ${index + 1}%3C/text%3E%3C/svg%3E`;
                                   }
                                 };
-                                setTimeout(tryNext, 100);
+                                setTimeout(tryNext, 200);
                               }}
-                              onLoad={() => {
+                              onLoad={(e) => {
+                                // Mark image as loaded to prevent flickering
+                                setLoadedImages(prev => new Set(prev).add(index));
                                 console.log(`✓ Successfully loaded image: ${imageUrl}`);
                               }}
                             />
